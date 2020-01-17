@@ -1,6 +1,7 @@
 package space.xrapid.listener;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.map.MultiKeyMap;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import space.xrapid.domain.Exchange;
 import space.xrapid.domain.ExchangeToExchangePayment;
@@ -38,13 +39,17 @@ public abstract class XrapidCorridors {
 
     protected SimpMessageSendingOperations messagingTemplate;
 
+    protected MultiKeyMap<String, List<Trade>> tradesCache;
+
     protected long buyDelta;
     protected long sellDelta;
 
-    public XrapidCorridors(ExchangeToExchangePaymentService exchangeToExchangePaymentService, XrapidInboundAddressService xrapidInboundAddressService, SimpMessageSendingOperations messagingTemplate, List<Exchange> exchangesToExclude, Set<String> usedTradeIds) {
+    public XrapidCorridors(ExchangeToExchangePaymentService exchangeToExchangePaymentService, XrapidInboundAddressService xrapidInboundAddressService, SimpMessageSendingOperations messagingTemplate, List<Exchange> exchangesToExclude, Set<String> usedTradeIds, MultiKeyMap<String, List<Trade>> tradesCache) {
 
         this.buyDelta = 200;
         this.sellDelta = 200;
+
+        this.tradesCache = tradesCache;
 
         if (exchangesToExclude == null) {
             this.exchangesToExclude = new ArrayList<>();
@@ -163,11 +168,20 @@ public abstract class XrapidCorridors {
                 getAggregatedSellTrades(exchangeToExchangePayment, "buy")).forEach(aggregatedTrades -> {
 
             if (!aggregatedTrades.isEmpty()) {
-                List<Trade> closestTrades = TradesCombinaisonsHelper.getTrades(aggregatedTrades, exchangeToExchangePayment.getAmount());
 
-                double sum = closestTrades.stream().mapToDouble(Trade::getAmount).sum();
+                List<Trade> closestTrades;
 
-                if (sum > 0) {
+                if (tradesCache != null && tradesCache.containsKey(exchangeToExchangePayment.getTransactionHash(), getDestinationExchange().toString(), "")) {
+                    closestTrades = tradesCache.get(exchangeToExchangePayment.getTransactionHash(), getDestinationExchange(), "");
+                } else {
+                    closestTrades = TradesCombinaisonsHelper.getTrades(aggregatedTrades, exchangeToExchangePayment.getAmount());
+                }
+
+                if (!closestTrades.isEmpty()) {
+
+                    if (tradesCache != null) {
+                        tradesCache.put(exchangeToExchangePayment.getTransactionHash(), getDestinationExchange().toString(), "", closestTrades);
+                    }
 
                     exchangeToExchangePayment.setXrpToFiatTrades(closestTrades);
                     exchangeToExchangePayment.setXrpToFiatTradeIds(closestTrades.stream().map(Trade::getOrderId).collect(Collectors.toList()));
@@ -201,11 +215,19 @@ public abstract class XrapidCorridors {
                 getAggregatedBuyTrades(exchangeToExchangePayment, "buy")).forEach(aggregatedTrades -> {
             if (!aggregatedTrades.isEmpty()) {
 
-                List<Trade> closestTrades = TradesCombinaisonsHelper.getTrades(aggregatedTrades, exchangeToExchangePayment.getAmount());
+                List<Trade> closestTrades;
 
-                double sum = closestTrades.stream().mapToDouble(Trade::getAmount).sum();
+                if (tradesCache != null && tradesCache.containsKey(exchangeToExchangePayment.getTransactionHash(), "", exchangeToExchangePayment.getSource().toString())) {
+                    closestTrades = tradesCache.get(exchangeToExchangePayment.getTransactionHash(), "", exchangeToExchangePayment.getSource().toString());
+                } else {
+                    closestTrades = TradesCombinaisonsHelper.getTrades(aggregatedTrades, exchangeToExchangePayment.getAmount());
+                }
 
-                if (sum > 0 ) {
+                if (!closestTrades.isEmpty() ) {
+
+                    if (tradesCache != null) {
+                        tradesCache.put(exchangeToExchangePayment.getTransactionHash(), "", exchangeToExchangePayment.getSource().toString(), closestTrades);
+                    }
 
                     exchangeToExchangePayment.setFiatToXrpTrades(closestTrades);
                     exchangeToExchangePayment.setFiatToXrpTradeIds(closestTrades.stream().map(Trade::getOrderId).collect(Collectors.toList()));

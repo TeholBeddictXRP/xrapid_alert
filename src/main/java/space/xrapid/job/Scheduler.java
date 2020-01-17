@@ -1,6 +1,7 @@
 package space.xrapid.job;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.map.MultiKeyMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -56,6 +57,8 @@ public class Scheduler {
     private OffsetDateTime windowStart;
     private OffsetDateTime windowEnd;
 
+    private MultiKeyMap<String, List<Trade>> tradesCache = new MultiKeyMap<>();
+
     @Scheduled(fixedDelay = 25000)
     public void odl() throws Exception {
 
@@ -99,7 +102,6 @@ public class Scheduler {
 
             double rate = rateService.getXrpUsdRate();
 
-
             log.info("Search all XRPL TRX between exchanges that providing API");
             destinationFiats.forEach(fiat -> {
             availableExchangesWithApi.stream()
@@ -107,7 +109,7 @@ public class Scheduler {
                         .forEach(exchange -> {
                             final Set<String> tradeIds = new HashSet<>();
                             Arrays.asList(45, 60, 60 * MAX_TRADE_DELAY_IN_MINUTES).forEach(delta -> {
-                                new EndToEndXrapidCorridors(exchangeToExchangePaymentService, xrapidInboundAddressService, messagingTemplate, exchange, fiat, delta, delta, true, tradeIds)
+                                new EndToEndXrapidCorridors(exchangeToExchangePaymentService, xrapidInboundAddressService, messagingTemplate, exchange, fiat, delta, delta, true, tradeIds, tradesCache)
                                         .searchXrapidPayments(payments, allTrades, rate);
                             });
                         });
@@ -115,14 +117,14 @@ public class Scheduler {
 
             log.info("Search all XRPL TRX between all exchanges, that are followed by a sell in the local currency (in case source exchange not providing API)");
             availableExchangesWithApi.forEach(exchange -> {
-                new InboundXrapidCorridors(exchangeToExchangePaymentService, messagingTemplate, exchange, availableExchangesWithApi).searchXrapidPayments(payments, allTrades.stream().filter(trade -> trade.getExchange().equals(exchange)).collect(Collectors.toList()), rate);
+                new InboundXrapidCorridors(exchangeToExchangePaymentService, messagingTemplate, exchange, availableExchangesWithApi, tradesCache).searchXrapidPayments(payments, allTrades.stream().filter(trade -> trade.getExchange().equals(exchange)).collect(Collectors.toList()), rate);
             });
 
             log.info("Search for all XRPL TRX from exchanges with API to all exchanes (in case destination exchange not providing API)");
             allConfirmedExchange.stream()
                     .filter(exchange -> !availableExchangesWithApi.contains(exchange))
                     .forEach(exchange -> {
-                        new OutboundXrapidCorridors(exchangeToExchangePaymentService, messagingTemplate, exchange, availableExchangesWithApi).searchXrapidPayments(payments, allTrades, rate);
+                        new OutboundXrapidCorridors(exchangeToExchangePaymentService, messagingTemplate, exchange, availableExchangesWithApi, tradesCache).searchXrapidPayments(payments, allTrades, rate);
                     });
 
 
@@ -131,7 +133,8 @@ public class Scheduler {
                 availableExchangesWithApi.stream()
                         .filter(exchange -> !exchange.getLocalFiat().equals(fiat))
                         .forEach(exchange -> {
-                            new EndToEndXrapidCorridors(exchangeToExchangePaymentService, xrapidInboundAddressService, messagingTemplate, exchange, fiat, 60, 60, false, null)
+                            new
+                                EndToEndXrapidCorridors(exchangeToExchangePaymentService, xrapidInboundAddressService, messagingTemplate, exchange, fiat, 60, 60, false, null, tradesCache)
                                     .searchXrapidPayments(payments, allTrades, rate);
                         });
             });

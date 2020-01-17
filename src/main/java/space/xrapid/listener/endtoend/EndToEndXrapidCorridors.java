@@ -1,6 +1,7 @@
 package space.xrapid.listener.endtoend;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.map.MultiKeyMap;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import space.xrapid.domain.*;
 import space.xrapid.domain.ripple.Payment;
@@ -36,9 +37,10 @@ public class EndToEndXrapidCorridors extends XrapidCorridors {
 
 
     public EndToEndXrapidCorridors(ExchangeToExchangePaymentService exchangeToExchangePaymentService, XrapidInboundAddressService xrapidInboundAddressService,
-                                   SimpMessageSendingOperations messagingTemplate, Exchange destinationExchange, Currency sourceFiat, long buyDelta, long sellDelta, boolean requireEndToEnd, Set<String> tradeIds) {
+                                   SimpMessageSendingOperations messagingTemplate, Exchange destinationExchange, Currency sourceFiat, long buyDelta,
+                                   long sellDelta, boolean requireEndToEnd, Set<String> tradeIds, MultiKeyMap<String, List<Trade>> tradesCache) {
 
-        super(exchangeToExchangePaymentService, xrapidInboundAddressService, messagingTemplate, null, tradeIds);
+        super(exchangeToExchangePaymentService, xrapidInboundAddressService, messagingTemplate, null, tradeIds, tradesCache);
 
 
         this.buyDelta = buyDelta;

@@ -1,6 +1,7 @@
 package space.xrapid.listener.inbound;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.map.MultiKeyMap;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import space.xrapid.domain.Exchange;
 import space.xrapid.domain.SpottedAt;
@@ -17,8 +18,8 @@ public class InboundXrapidCorridors extends XrapidCorridors {
 
     private Exchange destinationExchange;
 
-    public InboundXrapidCorridors(ExchangeToExchangePaymentService exchangeToExchangePaymentService, SimpMessageSendingOperations messagingTemplate, Exchange destinationExchange, List<Exchange> exchangesWithApi) {
-        super(exchangeToExchangePaymentService, null, messagingTemplate, exchangesWithApi, null);
+    public InboundXrapidCorridors(ExchangeToExchangePaymentService exchangeToExchangePaymentService, SimpMessageSendingOperations messagingTemplate, Exchange destinationExchange, List<Exchange> exchangesWithApi, MultiKeyMap<String, List<Trade>> tradesCache) {
+        super(exchangeToExchangePaymentService, null, messagingTemplate, exchangesWithApi, null, tradesCache);
         this.destinationExchange = destinationExchange;
     }
 

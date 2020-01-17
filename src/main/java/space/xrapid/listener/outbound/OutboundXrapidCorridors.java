@@ -1,6 +1,7 @@
 package space.xrapid.listener.outbound;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.map.MultiKeyMap;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.scheduling.annotation.Async;
 import space.xrapid.domain.Exchange;
@@ -19,8 +20,8 @@ public class OutboundXrapidCorridors extends XrapidCorridors {
 
     private Exchange destinationExchange;
 
-    public OutboundXrapidCorridors(ExchangeToExchangePaymentService exchangeToExchangePaymentService, SimpMessageSendingOperations messagingTemplate, Exchange destinationExchange, List<Exchange> exchangesWithApi) {
-        super(exchangeToExchangePaymentService, null, messagingTemplate, exchangesWithApi, null);
+    public OutboundXrapidCorridors(ExchangeToExchangePaymentService exchangeToExchangePaymentService, SimpMessageSendingOperations messagingTemplate, Exchange destinationExchange, List<Exchange> exchangesWithApi, MultiKeyMap<String, List<Trade>> tradesCache) {
+        super(exchangeToExchangePaymentService, null, messagingTemplate, exchangesWithApi, null, tradesCache);
         this.destinationExchange = destinationExchange;
     }
 
