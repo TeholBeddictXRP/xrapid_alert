@@ -41,6 +41,10 @@ public abstract class XrapidCorridors {
     protected long buyDelta;
     protected long sellDelta;
 
+
+    public XrapidCorridors() {
+    }
+
     public XrapidCorridors(ExchangeToExchangePaymentService exchangeToExchangePaymentService, XrapidInboundAddressService xrapidInboundAddressService, SimpMessageSendingOperations messagingTemplate, List<Exchange> exchangesToExclude, Set<String> usedTradeIds) {
 
         this.buyDelta = 200;

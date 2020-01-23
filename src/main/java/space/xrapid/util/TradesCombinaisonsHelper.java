@@ -4,10 +4,8 @@ import org.paukov.combinatorics3.Generator;
 import org.paukov.combinatorics3.IGenerator;
 import space.xrapid.domain.Trade;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class TradesCombinaisonsHelper {
 
@@ -59,6 +57,34 @@ public class TradesCombinaisonsHelper {
         }
 
         return toReturn;
+    }
+
+
+    public static Map<Double, List<Trade>> findTradeGroups(List<Trade> trades, String side) {
+
+        Map<Double, List<Trade>> result = new HashMap<>();
+
+        List<Trade> sideTrades = trades.stream().filter(trade -> trade.getSide().equals(side)).collect(Collectors.toList());
+
+        for (int i = 1; i <= 3; i++) {
+
+            IGenerator<List<Trade>> combinaisons = Generator.combination(sideTrades).simple(i);
+
+            Iterator<List<Trade>> iterator = combinaisons.iterator();
+
+            while (iterator.hasNext()) {
+                List<Trade> candidates = iterator.next();
+
+                double sum = sum(candidates);
+
+                if (sum > 5000) {
+                    result.put(sum, candidates);
+                }
+
+            }
+        }
+
+        return result;
     }
 
     public static Double sum(List<Trade> groups) {

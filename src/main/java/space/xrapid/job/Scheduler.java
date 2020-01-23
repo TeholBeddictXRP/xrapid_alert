@@ -13,6 +13,7 @@ import space.xrapid.domain.Trade;
 import space.xrapid.domain.ripple.Payment;
 import space.xrapid.listener.endtoend.EndToEndXrapidCorridors;
 import space.xrapid.listener.inbound.InboundXrapidCorridors;
+import space.xrapid.listener.offchain.XrapidOffChainCorridor;
 import space.xrapid.listener.outbound.OutboundXrapidCorridors;
 import space.xrapid.service.*;
 
@@ -71,6 +72,9 @@ public class Scheduler {
         try {
             updatePaymentsWindows();
 
+
+
+
             OffsetDateTime xrplPaymentsStart = windowEnd.minusMinutes(MAX_TRADE_DELAY_IN_MINUTES + XRPL_PAYMENT_WINDOW_SIZE_IN_MINUTES);
             OffsetDateTime xrplPaymentsEnd = windowEnd.minusMinutes(MAX_TRADE_DELAY_IN_MINUTES);
             log.info("Fetching payments from XRP Ledger from {} to {}", xrplPaymentsStart, xrplPaymentsEnd);
@@ -78,9 +82,11 @@ public class Scheduler {
 
             log.info("{} payments fetched from XRP Ledger", payments.size());
 
-            if (payments.isEmpty()) {
-                return;
-            }
+//            if (payments.isEmpty()) {
+//                return;
+//            }
+
+
 
             List<Trade> allTrades = new ArrayList<>();
 
@@ -98,6 +104,12 @@ public class Scheduler {
                     });
 
             double rate = rateService.getXrpUsdRate();
+
+
+            new XrapidOffChainCorridor(exchangeToExchangePaymentService, xrapidInboundAddressService, messagingTemplate, allTrades, Exchange.BITSTAMP_EUR, Exchange.BITSTAMP, rate).search();
+
+
+          //  if (true) return;
 
             log.info("Search all XRPL TRX between exchanges that providing API, basing on confirmed destination tag");
             destinationFiats.forEach(fiat -> {
