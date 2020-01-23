@@ -48,7 +48,7 @@ public class Scheduler {
 
     public static Set<String> transactionHashes = new HashSet<>();
 
-    private static int MAX_TRADE_DELAY_IN_MINUTES = 4;
+    private static int MAX_TRADE_DELAY_IN_MINUTES = 8;
     private static int XRPL_PAYMENT_WINDOW_SIZE_IN_MINUTES = 1;
 
 
